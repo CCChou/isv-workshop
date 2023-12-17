@@ -1,0 +1,61 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitea
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gitea
+  template:
+    metadata:
+      labels:
+        app: gitea
+    spec:
+      containers:
+        - image: docker.io/gitea/gitea:1.20.5
+          name: gitea
+          volumeMounts:
+            - mountPath: /data
+              name: gitea-volume
+      volumes:
+        - name: gitea-volume
+          persistentVolumeClaim:
+            claimName: gitea-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gitea-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitea
+spec:
+  selector:
+    app: gitea
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 3000
+---
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: gitea
+spec:
+  to:
+    kind: Service
+    name: gitea
+    weight: 100
+  port:
+    targetPort: http
