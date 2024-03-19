@@ -16,7 +16,7 @@ variable "ami" {
 
 variable "instance_type" {
   # Free type
-  default = "t3.2xlarge"
+  default = "m5a.4xlarge"
 }
 
 provider "aws" {
@@ -34,6 +34,11 @@ resource "aws_instance" "app_server" {
   instance_type          = var.instance_type
   key_name               = "app_server"
   vpc_security_group_ids = [aws_security_group.app_server_sg.id]
+  user_data = file("${path.module}/setup.sh")
+
+  root_block_device {
+    volume_size = 120
+  }
 
   tags = {
     Name = "ExampleAppServerInstance"
@@ -46,7 +51,7 @@ resource "aws_instance" "app_server" {
 
 resource "aws_key_pair" "app_server_keypair" {
   key_name   = "app_server"
-  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCqVECZCCje2m7iPRBeNbds2Plf4d+iLheTttFqrBWJRO2h6/5hkF1O37FtZ6UhdMbRU251YLqpCCiPOtQgvtdeJ6uDfhWX19z0vDya25Z9HTyVJ71fcMvx5G30YbGlmeTtLnvqqi080OYUSpePIYZyOqpttNF2O4RaJ2aLzdhhasQArEZFROCteB2Ou9Pv0kM3h8ODKJGwJv2SVkTZbwq95/y9/44l9N2GfvrjShWQoztYdoXFb4LplNboOtpbJnHAwTU0BUgHDbfPirLA7ZGPfZ9kBRYGWMiOoN6ZOR9tQTNrWwGOcmAyjO0SLX9IwIN7gnHmvyh+bdJU6JD1rk1AWvtUJZS3Lt/hPTdLHmqXRQ8lBtUqXmTL8ww2YGx5uhjqtJclN4Iyv8rNYj0nRHZrZYYu9Lik6+f5GPP+DnA4WysX8RPU6SqUzypcr16Uy9O0cJZiezdrbeZczQQV/ajvSkE/Ys8DKauAxcCxG7wKiBvZ9xAhjVbuL6iU31jXOME= dennischou@dechou-mac"
+  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQClrBErj5SjX9/tWl4OZfnwvVVaSHRKw5RSEDtNnEs03Cd6vXTiQxVc1hln2SyRxyiVuWw2no7h/5srzOC25kIrGVtgeCQWOZuVvwhq9FMrdnJoK4MfpQJ9ivyylW0PzMUqs2C9f7uot9Txan7p+Avs5ubyTAjIxEElyoOqcgVMms3fsAN+ELcV5Rvrd93rYce3EoQR7FdZnC4d7uF1aFeq9jV6AONM0r8vdChY1KYxeVULrxAOkioTNHh1qkPK4x0OtqSxLw1h81mRTCr7E0tivC78Ud3Eyikkd6hGjRva+Ydt8cd5Lsg9VIPX4oBEW2vYCB0MMuJ+RPWirwsJ87mdZt5K+1D7Fz4wvd++5KzOdGqkMceRgL6dML+m30Bo63I6gy3FFHcPb2/oICxj7E9PGX6NXEVZFDmVq+WHhZpoDOLmFgTYFAy+PAxKFfGnk3IdcaVSxgNwprCqEZc+yymNe6XUCRQO0oIXXqw5jJn899DLgDlCXtqjyipm4ijVHS8= dennischou@dechou-mac"
 }
 
 resource "aws_security_group" "app_server_sg" {
@@ -56,6 +61,17 @@ resource "aws_security_group" "app_server_sg" {
     description      = "Allow SSH"
     from_port        = 22
     to_port          = 22
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+    prefix_list_ids  = []
+    security_groups  = []
+    self             = false
+  },
+  {
+    description      = "Allow HTTP"
+    from_port        = 8080
+    to_port          = 8100
     protocol         = "tcp"
     cidr_blocks      = ["0.0.0.0/0"]
     ipv6_cidr_blocks = ["::/0"]
