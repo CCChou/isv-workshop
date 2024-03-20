@@ -18,9 +18,9 @@ install_cli() {
 yum install -y java-17-openjdk git wget vim podman
 
 # get oc, tkn, kn cli
-install_cli https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable/openshift-client-linux.tar.gz oc oc
-install_cli https://mirror.openshift.com/pub/openshift-v4/clients/pipeline/latest/tkn-linux-amd64.tar.gz tkn-linux-amd64 tkn
-install_cli https://mirror.openshift.com/pub/openshift-v4/clients/serverless/latest/kn-linux-amd64.tar.gz kn kn
+install_cli https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/4.14.17/openshift-client-linux.tar.gz oc oc
+install_cli https://mirror.openshift.com/pub/openshift-v4/clients/pipeline/1.11.0/tkn-linux-amd64.tar.gz tkn-linux-amd64 tkn
+install_cli https://mirror.openshift.com/pub/openshift-v4/clients/serverless/1.11.2/kn-linux-amd64.tar.gz kn kn
 
 # change passowrd authentication to yes and restart sshd
 sed -i "/^[^#]*PasswordAuthentication[[:space:]]no/c\PasswordAuthentication yes" /etc/ssh/sshd_config
