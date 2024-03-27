@@ -1,0 +1,39 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-openshift-nfs-pod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello-openshift-nfs-pod
+  template:
+    metadata:
+      labels:
+        app: hello-openshift-nfs-pod
+    spec:
+      containers:
+        - image: openshift/hello-openshift
+          name: hello-openshift-nfs-pod
+          volumeMounts:
+            - name: nfsvol
+              mountPath: /usr/share/nginx/html
+      securityContext:
+        supplementalGroups: [100003]
+        privileged: false
+      volumes:
+        - name: nfsvol
+          persistentVolumeClaim:
+            claimName: nfs # change to nfs-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
