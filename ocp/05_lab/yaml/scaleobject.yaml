@@ -6,7 +6,7 @@ spec:
   scaleTargetRef:
     name: keda-prom-app
   minReplicaCount: 1
-  maxReplicaCount: 10
+  maxReplicaCount: 3
   pollingInterval: 5
   cooldownPeriod: 10
   triggers:
