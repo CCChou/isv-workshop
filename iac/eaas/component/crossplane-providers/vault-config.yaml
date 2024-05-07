@@ -1,0 +1,15 @@
+apiVersion: secrets.crossplane.io/v1alpha1
+kind: VaultConfig
+metadata:
+  name: vault
+spec:
+  server: https://vault.apps.${HUB_BASE_DOMAIN} 
+  mountPath: infra/clusters/${CLUSTER_NAME}/crossplane-secrets/
+  version: v1
+  auth:
+    method: Token
+    token:
+      source: Filesystem
+      fs:
+        path: /vault/secrets/token
+        

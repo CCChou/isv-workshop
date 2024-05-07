@@ -1,0 +1,23 @@
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: JWTOIDCAuthEngineRole
+metadata:
+  name: developer
+spec:
+  authentication: 
+    path: hub
+    role: vault-admin
+  path: keycloak
+  boundAudiences: 
+  - "vault"
+  name: developer
+  userClaim: "sub"
+  allowedRedirectURIs: 
+    - "http://localhost:8250/oidc/callback"
+    - "https://vault.apps.${CLUSTER_BASE_DOMAIN}/ui/vault/auth/keycloak/oidc/callback"
+    - "https://vault.apps.${CLUSTER_BASE_DOMAIN}/v1/auth/keycloak/oidc/callback"
+  groupsClaim: "groups" 
+  tokenPolicies: 
+    - "default"
+  roleType: "oidc"
+  # OIDCScopes: 
+  #   - "groups"

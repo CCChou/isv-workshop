@@ -1,0 +1,225 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: xpostgresqlinstances.aws.redhat-cop.redhat.com
+spec:
+  publishConnectionDetailsWithStoreConfigRef: 
+    name: vault
+  compositeTypeRef:
+    apiVersion: redhat-cop.redhat.com/v1alpha1
+    kind: XPostgreSQLInstance
+  resources:
+    - name: dbsubnetgroup
+      base:
+        apiVersion: rds.aws.upbound.io/v1beta1
+        kind: SubnetGroup
+        metadata:
+          name: subnetgroup
+        spec:
+          forProvider: 
+            tags:
+              Name: rds-instance
+            subnetIds:
+            - subnet-077d96d1df68ce81b
+            - subnet-0480ec1eec95cf9c2
+      readinessChecks:	
+        - matchCondition:	
+            status: 'True'	
+            type: Ready	
+          type: MatchCondition              
+      patches:              
+        - fromFieldPath: "spec.parameters.region"
+          toFieldPath: "spec.forProvider.region"
+          type: FromCompositeFieldPath                              
+    - name: rdsinstance
+      base:
+        apiVersion: rds.aws.upbound.io/v1beta1
+        kind: Instance
+        metadata:
+          name: instance        
+        spec:
+          forProvider:
+            dbSubnetGroupNameSelector:
+              matchControllerRef: true
+            instanceClass: db.t2.small
+            username: postgres
+            engine: postgres
+            engineVersion: "12"
+            skipFinalSnapshot: true
+            publiclyAccessible: false
+            autoGeneratePassword: true
+            passwordSecretRef:
+              namespace: crossplane-system
+              key: password
+          publishConnectionDetailsTo:
+            configRef:
+              name: vault
+      readinessChecks:	
+        - matchCondition:	
+            status: 'True'	
+            type: Ready	
+          type: MatchCondition            
+      patches:
+        - fromFieldPath: "metadata.name"
+          toFieldPath: "spec.publishConnectionDetailsTo.name"
+          type: FromCompositeFieldPath
+        - fromFieldPath: "metadata.name"
+          toFieldPath: "spec.dbName"          
+          type: FromCompositeFieldPath      
+        - fromFieldPath: "metadata.name"
+          toFieldPath: "spec.forProvider.passwordSecretRef.name"
+          type: FromCompositeFieldPath      
+        - fromFieldPath: "spec.parameters.size"
+          toFieldPath: "spec.forProvider.instanceClass"
+          transforms:
+          - type: map
+            map:
+              small: db.t2.small
+              medium: db.t2.medium
+              large: db.t2.large
+          type: FromCompositeFieldPath    
+        - fromFieldPath: "spec.parameters.storage"
+          toFieldPath: "spec.forProvider.allocatedStorage"
+          type: FromCompositeFieldPath
+        - fromFieldPath: "spec.parameters.availabilityZone"
+          toFieldPath: "spec.forProvider.availabilityZone"
+          type: FromCompositeFieldPath
+        - fromFieldPath: "spec.parameters.region"
+          toFieldPath: "spec.forProvider.region"
+          type: FromCompositeFieldPath
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider.endpoint
+          toFieldPath: "status.endpoint"
+          policy:
+            fromFieldPath: Optional                                          
+      connectionDetails:
+        - fromFieldPath: "status.atProvider.endpoint"
+          name: endpoint
+        - fromFieldPath: "status.atProvider.address"
+          name: host
+        - fromFieldPath: "spec.forProvider.username"
+          name: username
+        - fromConnectionSecretKey: "attribute.password"
+          name: password         
+    - name: databasesecretengineconfig
+      base:
+        apiVersion: kubernetes.crossplane.io/v1alpha2
+        kind: Object
+        metadata:
+          name: databasesecretengineconfig
+        spec:
+          forProvider:
+            manifest:                          
+              apiVersion: redhatcop.redhat.io/v1alpha1
+              kind: DatabaseSecretEngineConfig
+              metadata:
+                name: databasesecretengineconfig
+                namespace: vault-admin
+              spec:
+                authentication: 
+                  path: ${CLUSTER_NAME}
+                  role: vault-admin
+                pluginName: postgresql-database-plugin
+                allowedRoles: 
+                - '*'
+                connectionURL: postgresql://{{username}}:{{password}}@endpoint
+                rootCredentials:
+                  vaultSecret:
+                    path: infra/clusters/${CLUSTER_NAME}/crossplane-secrets/name
+                  passwordKey: password
+      patches:
+        - type: CombineFromComposite
+          combine:
+            variables:
+              - fromFieldPath: metadata.labels[team]            
+              - fromFieldPath: metadata.labels["crossplane.io/claim-namespace"]
+            strategy: string
+            string:
+              fmt: "applications/%s/%s/databases"
+          toFieldPath: spec.forProvider.manifest.spec.path  
+        - type: CombineFromComposite
+          combine:
+            variables:
+              - fromFieldPath: status.endpoint
+            strategy: string
+            string:
+              fmt: "postgresql://{{username}}:{{password}}@%s"
+          toFieldPath: spec.forProvider.manifest.spec.connectionURL
+        - type: CombineFromComposite
+          combine:
+            variables:
+              - fromFieldPath: metadata.name
+            strategy: string
+            string:
+              fmt: "infra/clusters/${CLUSTER_NAME}/crossplane-secrets/%s"
+          toFieldPath: spec.forProvider.manifest.spec.rootCredentials.vaultSecret.path
+        - fromFieldPath: "metadata.name"
+          toFieldPath: "spec.forProvider.manifest.spec.name"
+          type: FromCompositeFieldPath
+        - fromFieldPath: "metadata.name"
+          toFieldPath: "spec.forProvider.manifest.metadata.name"
+          type: FromCompositeFieldPath                    
+      readinessChecks:	
+        - matchCondition:	
+            status: 'True'	
+            type: Ready	
+          type: MatchCondition                                      
+    - name: databasesecretenginerole
+      base:
+        apiVersion: kubernetes.crossplane.io/v1alpha2
+        kind: Object
+        metadata:
+          name: databasesecretenginerole
+        spec:
+          forProvider:
+            manifest:                                    
+              apiVersion: redhatcop.redhat.io/v1alpha1
+              kind: DatabaseSecretEngineRole
+              metadata:
+                name: databasesecretenginerole
+                namespace: vault-admin
+              spec:
+                authentication: 
+                  path: ${CLUSTER_NAME}
+                  role: vault-admin
+                #path: applications/team/namespace/databases/name
+                defaultTTL: 1h
+                maxTTL: 24h
+                dBName: name
+                name: read-only
+                creationStatements:
+                  - CREATE ROLE "{{name}}" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}'; GRANT SELECT ON ALL TABLES IN SCHEMA public TO "{{name}}";
+      patches:      
+        - type: CombineFromComposite
+          combine:
+            variables:
+              - fromFieldPath: metadata.labels[team]            
+              - fromFieldPath: metadata.labels["crossplane.io/claim-namespace"]
+            strategy: string
+            string:
+              fmt: "applications/%s/%s/databases"
+          toFieldPath: spec.forProvider.manifest.spec.path
+        - fromFieldPath: "metadata.name"
+          toFieldPath: "spec.forProvider.manifest.spec.dBName"
+          type: FromCompositeFieldPath          
+        - type: CombineFromComposite
+          combine:
+            variables:
+              - fromFieldPath: metadata.name
+            strategy: string
+            string:
+              fmt: "%s-read-only"
+          toFieldPath: spec.forProvider.manifest.spec.name
+        - type: CombineFromComposite
+          combine:
+            variables:
+              - fromFieldPath: metadata.name
+            strategy: string
+            string:
+              fmt: "%s-read-only"
+          toFieldPath: spec.forProvider.manifest.metadata.name                                
+      readinessChecks:	
+        - matchCondition:	
+            status: 'True'	
+            type: Ready	
+          type: MatchCondition                                       

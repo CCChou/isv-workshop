@@ -1,0 +1,20 @@
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: vault-config-operator 
+  namespace: vault-config-operator 
+spec:
+  channel: alpha
+  installPlanApproval: Automatic
+  name: vault-config-operator 
+  source: community-operators
+  sourceNamespace: openshift-marketplace
+  config:
+    env:
+    - name: VAULT_ADDR
+      value: https://vault.apps.${HUB_BASE_DOMAIN}
+    - name: VAULT_SKIP_VERIFY
+      value: "true"
+
+

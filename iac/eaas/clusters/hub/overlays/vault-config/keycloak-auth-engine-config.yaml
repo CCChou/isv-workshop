@@ -1,0 +1,16 @@
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: JWTOIDCAuthEngineConfig
+metadata:
+  name: keycloak
+spec:
+  authentication: 
+    path: hub
+    role: vault-admin
+  path: keycloak
+  OIDCClientID: "vault"
+  OIDCCredentials:
+    secret: 
+      name: keycloak-client-secret-vault
+    usernameKey: CLIENT_ID
+    passwordKey: CLIENT_SECRET
+  OIDCDiscoveryURL: https://keycloak-sso.apps.${CLUSTER_BASE_DOMAIN}/auth/realms/myorg

@@ -1,0 +1,19 @@
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: Policy
+metadata:
+  name: crossplane-secrets-${CLUSTER_NAME}
+spec:
+  # Add fields here
+  authentication: 
+    path: ${CLUSTER_NAME}
+    role: vault-admin
+  policy: |
+    path "/infra/clusters/${CLUSTER_NAME}/crossplane-secrets/data/*" {
+        capabilities = ["create", "read", "update", "delete"]
+    }
+    path "/infra/clusters/${CLUSTER_NAME}/crossplane-secrets/metadata/*" {
+        capabilities = ["create", "read", "update", "delete"]
+    }
+    path "/infra/clusters/${CLUSTER_NAME}/crossplane-secrets/*" {
+        capabilities = ["create", "read", "update", "delete"]
+    }    

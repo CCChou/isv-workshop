@@ -1,0 +1,22 @@
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: GroupConfig
+metadata:
+  name: tenant-gitops-namespaces
+spec:
+  annotationSelector:
+    matchLabels:
+      devteam: "true"    
+  templates:
+    - objectTemplate: |
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: "{{.Name}}"
+          annotations:
+            argocd.argoproj.io/sync-options: ServerSideApply=true
+          labels:
+            tenant-gitops: "true"
+      excludedPaths:
+        - .metadata
+        - .status
+        - .spec.replicas               
