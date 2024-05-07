@@ -14,4 +14,4 @@ patches:
     target:
       kind: ConsoleLink
       name: rhsso
-      namespace: sso  
+      namespace: openshift-sso  

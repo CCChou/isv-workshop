@@ -15,4 +15,4 @@ spec:
         credentialsSecret:
           kind: Secret         
           name: keycloak-creds
-          namespace: group-sync-operator
+          namespace: openshift-group-sync-operator

@@ -15,7 +15,7 @@ spec:
       sourceObjectRefs:
       - apiVersion: v1
         kind: Secret
-        namespace: sso
+        namespace: openshift-sso
         name: keycloak-client-secret-backstage        
       patchTemplate: |
         data:

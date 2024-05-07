@@ -23,7 +23,7 @@ applications:
       argocd.argoproj.io/compare-options: IgnoreExtraneous
       argocd.argoproj.io/sync-wave: '5'
     destination:
-      namespace: sso
+      namespace: openshift-sso
     source:
       path: clusters/hub/overlays/rhsso-operator
 
@@ -32,7 +32,7 @@ applications:
       argocd.argoproj.io/compare-options: IgnoreExtraneous
       argocd.argoproj.io/sync-wave: '15'
     destination:
-      namespace: sso
+      namespace: openshift-sso
     source:
       path: clusters/hub/overlays/rhsso-configuration
 
@@ -137,7 +137,7 @@ applications:
       argocd.argoproj.io/compare-options: IgnoreExtraneous
       argocd.argoproj.io/sync-wave: '15'
     destination:
-      namespace: group-sync-configuration
+      namespace: openshift-group-sync-configuration
     source:
       path: clusters/hub/overlays/group-sync-configuration       
 
